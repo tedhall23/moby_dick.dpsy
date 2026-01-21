@@ -61,7 +61,7 @@ sections = (
     ["The pale Usher—threadbare in coat, heart, body, and brain; I see him now. He was ever dusting his old lexicons and grammars, with a queer handkerchief, mockingly embellished with all the gay flags of all the known nations of the world. He loved to dust his old grammars; it somehow mildly reminded him of his mortality. Ahab had long scar traced down his face, telling of past battles."]
 )
 
-========== RUN DSPY.PREDICT (SUPPOSED TO HIT RATE LIMIT) AND DSPY.RLM ==========
+========== RUN DSPY.PREDICT (SUPPOSED TO HIT RATE LIMIT) VS. DSPY.RLM ==========
 # THIS IS EXPECTED TO FAIL!!! 
 predict = dspy.Predict(QA)
 
@@ -73,7 +73,7 @@ result_predict = predict(
 print("Predict answer:")
 print(result_predict.answer)
 
-#THIS IS SHOULD!!!
+#THIS IS SHOULD WORK!!!
 rlm = dspy.RLM("sections, question -> answer")
 
 result_rlm = rlm(
