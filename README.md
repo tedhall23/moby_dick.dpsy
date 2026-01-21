@@ -1,115 +1,125 @@
-# Demonstrating DSPy Predict vs Recursive Language Models (RLM) on Long-Context Reasoning
+# The Core Idea: Predict Fails Due to Rate Limits, Not Reasoning
 
-## Overview
+## One Sentence Summary
 
-This repository demonstrates **why Recursive Language Models (RLMs)** are necessary for reasoning over **long documents that cannot fit into a single prompt**, and why naïve single-shot prompting (`dspy.Predict`) breaks down under real-world constraints.
+**`dspy.Predict` does not fail because it reasons poorly — it fails because it hits rate limits when forced to process long context in a single prompt.**
 
-The goal is **not** to show that Predict is “worse” at reasoning, but to show that it **fails operationally** when faced with:
-
-- Context windows that are too small
-- Token-per-minute (TPM) rate limits
-- Large volumes of irrelevant content
-- Repeated retries that amplify cost and latency
-
-This mirrors real enterprise use cases such as:
-- Regulatory filings
-- News or intelligence feeds
-- Large policy or legal documents
-- Customer support knowledge bases
+Recursive Language Models (RLMs) exist to solve this *operational* failure.
 
 ---
 
-## What This Demo Is (and Is Not)
+## What This Demo Is Proving
 
-### This **is**:
-- A realistic simulation of long-document reasoning
-- A comparison between **single-shot prompting** and **recursive decomposition**
-- A demonstration of **why RLM exists**, not just how to call it
-- A setup that mirrors customer complaints like:
-  > “The answer is in there, but the model keeps failing or rate limiting”
+This demo is **not** about:
+- Accuracy
+- Chain-of-thought quality
+- Whether the model “knows” the answer
 
-### This **is not**:
-- A benchmark of model intelligence
-- A claim that Predict is “bad”
-- A token-stuffing trick
+The demo proves that:
+
+> **Single-shot prompting becomes unusable at scale because it concentrates token usage into one call and repeatedly hits TPM limits.**
 
 ---
 
-## Architectural Comparison
+## The Failure Mode
 
-### 1. `dspy.Predict` (Single-Shot Prompting)
+### Predict’s Operating Assumption
 
-**Mental model**:
-> “Put everything in one prompt and ask the question.”
+`Predict` assumes:
+- The full context fits into one prompt
+- One large LLM call is acceptable
+- Retries are cheap
 
-**Characteristics**:
-- One LLM call
-- Entire document must fit in the context window
-- Sensitive to:
-  - Prompt length
-  - Rate limits
-  - Retry amplification
-- Works well **only when the document is small**
+This breaks down when:
+- Context grows large
+- Users re-run cells
+- The system retries after failures
 
-**Failure modes**:
-- Prompt exceeds context window
-- TPM rate limiting when repeatedly retried
-- Latency spikes
-- Cost grows superlinearly with document size
+Result:
+- Token-per-minute (TPM) exhaustion
+- Rate limiting
+- Cascading failures
 
 ---
 
-### 2. Recursive Language Models (RLM)
+## Why This Is Not a Toy Problem
 
-**Mental model**:
-> “Read the document in pieces, reason locally, then compose the answer.”
+In real systems:
+- Long documents are common
+- Users rerun notebooks
+- Pipelines retry automatically
+- Multiple users share the same quota
 
-**Key idea**:
-RLM decomposes a long document into manageable chunks and performs **bounded reasoning at each step**, recursively aggregating results.
+Even if **Predict gets the right answer**, it often:
+- Cannot run reliably
+- Cannot be repeated
+- Cannot scale to production
 
-**Characteristics**:
-- Multiple smaller LLM calls
-- Each call fits comfortably in context
-- Natural backpressure against rate limits
-- Deterministic control over:
-  - Chunk size
-  - Reasoning depth
-  - Cost per step
+Accuracy becomes irrelevant if the call never completes.
 
 ---
 
-## Why QA Is a Trap (and Still Useful)
+## Why RLM Does Not Get Rate Limited (in the Same Way)
 
-In toy examples, **Predict often “wins”** because:
-- The answer exists verbatim
-- Models are excellent at pattern matching
-- The document is still small enough to fit
+RLM changes the unit of work:
 
-This demo intentionally shows that:
-> **QA accuracy is not the differentiator — operational robustness is.**
+| Predict | RLM |
+|------|----|
+| One huge prompt | Many small prompts |
+| Large TPM spike | Steady TPM usage |
+| Retry = full cost | Retry = local cost |
+| All-or-nothing | Incremental |
 
-The moment you scale document length:
-- Predict fails *before* reasoning even begins
-- RLM continues to function predictably
+RLM:
+- Spreads token usage over time
+- Keeps each call under TPM thresholds
+- Fails gracefully instead of catastrophically
 
 ---
 
-## Synthetic Long-Document Setup
+## Key Insight
 
-We construct a document as a **list of sections**:
+> **Rate limits are a systems problem, not a reasoning problem.**
 
-- Thousands of irrelevant “filler” sections
-- A small number of semantically important facts
-- No guarantee that important facts are adjacent
+RLM is a systems-level solution.
 
-Example (simplified):
+---
 
-```python
-sections = (
-    ["Filler text " + str(i) for i in range(1000)] +
-    ["Ahab had a peg leg made of whale bone."] +
-    ["More filler " + str(i) for i in range(1000)] +
-    ["Ahab had a furrowed brow."] +
-    ["Even more filler " + str(i) for i in range(1000)] +
-    ["Ahab had a long scar down his face."]
-)
+## Why Predict “Looks Fine” in Demos
+
+Predict appears to work because:
+- Context is still small
+- The notebook is run once
+- No retries occur
+
+The moment you:
+- Increase document size
+- Rerun cells
+- Share quotas
+- Add retries
+
+Predict becomes unstable.
+
+---
+
+## The Real Differentiator
+
+| Question | Wrong Focus | Correct Focus |
+|--------|------------|---------------|
+| Which answers correctly? | Accuracy | Reliability |
+| Which reasons better? | CoT | Token flow |
+| Which scales? | Prompt cleverness | Call structure |
+
+---
+
+## Final Takeaway
+
+**RLM exists because rate limits exist.**
+
+If rate limits disappeared, Predict would be fine.
+
+But they don’t.
+
+So RLM wins.
+
+---
