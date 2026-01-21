@@ -1,4 +1,4 @@
-# The Core Idea: Predict Fails Due to Rate Limits, Not Reasoning
+# Demonstrating DSPy Predict vs Recursive Language Models (RLM) on Long-Context Reasoning
 
 ## One Sentence Summary
 
