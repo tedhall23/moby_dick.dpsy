@@ -111,15 +111,3 @@ Predict becomes unstable.
 | Which scales? | Prompt cleverness | Call structure |
 
 ---
-
-## Final Takeaway
-
-**RLM exists because rate limits exist.**
-
-If rate limits disappeared, Predict would be fine.
-
-But they don’t.
-
-So RLM wins.
-
----
