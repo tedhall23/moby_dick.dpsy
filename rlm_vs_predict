@@ -1,0 +1,84 @@
+========== INSTALLS, IMPORTS, ETC. ==========
+%pip install dspy==3.1.2
+dbutils.library.restartPython()
+
+import random 
+
+%sh
+# Install & configure Deno for RLM/Python
+
+# Install Deno if not already installed
+if [ ! -f "$HOME/.deno/bin/deno" ]; then
+    echo "Installing Deno..."
+    curl -fsSL https://deno.land/x/install/install.sh | sh -s v2.6.5
+else
+    echo "Deno already installed at $HOME/.deno/bin/deno"
+fi
+
+# Set environment variables in the shell session
+export DENO_INSTALL="$HOME/.deno"
+export DENO_DIR="$HOME/.deno/cache"
+export PATH="$DENO_INSTALL/bin:$PATH"
+
+# Verify installation
+deno --version
+
+import os
+import dspy
+
+# Python session: make Deno visible to Python/RLM
+os.environ["DENO_INSTALL"] = os.path.expanduser("~/.deno")
+os.environ["DENO_DIR"] = os.path.expanduser("~/.deno/cache")
+os.environ["PATH"] = os.path.expanduser("~/.deno/bin") + ":" + os.environ["PATH"]
+
+# Check that Python can see Deno
+os.system("deno --version")
+
+========== LM CONFIG + SIGNATURE DESCRIPTION ==========
+lm = dspy.LM(model="databricks/databricks-gpt-5-2")
+dspy.settings.configure(lm=lm)
+
+class QA(dspy.Signature):
+    sections = dspy.InputField()
+    question = dspy.InputField()
+    answer = dspy.OutputField()
+
+========== CREATE SYNTHETIC LARGE DOCUMENT ==========
+sections = (
+    ["Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. Whenever I find myself growing grim about the mouth; whenever it is a damp, drizzly November in my soul; whenever I find myself involuntarily pausing before coffin warehouses, and bringing up the rear of every funeral I meet; and especially whenever my hypos get such an upper hand of me, that it requires a strong moral principle to prevent me from deliberately stepping into the street, and methodically knocking people’s hats off—then, I account it high time to get to sea as soon as I can. This is my substitute for pistol and ball. With a philosophical flourish Cato throws himself upon his sword; I quietly take to the ship. There is nothing surprising in this. If they but knew it, almost all men in their degree, some time or other, cherish very nearly the same feelings towards the ocean with me. There now is your insular city of the Manhattoes, belted round by wharves as Indian isles by coral reefs—commerce surrounds it with her surf. Right and left, the streets take you waterward. Its extreme downtown is the battery, where that noble mole is washed by waves, and cooled by breezes, which a few hours previous were out of sight of land. Look at the crowds of water-gazers there. Circumambulate the city of a dreamy Sabbath afternoon. Go from Corlears Hook to Coenties Slip, and from thence, by Whitehall, northward. What do you see?—Posted like silent sentinels all around the town, stand thousands upon thousands of mortal men fixed in ocean reveries. Some leaning against the spiles; some seated upon the pier-heads; some looking over the bulwarks of ships from China; some high aloft in the rigging, as if striving to get a still better seaward peep. But these are all landsmen; of week days pent up in lath and plaster—tied to counters, nailed to benches, clinched to desks. How then is this? Are the green fields gone? What do they here? But look! here come more crowds, pacing straight for the water, and seemingly bound for a dive. Strange! Nothing will content them but the extremest limit of the land; loitering under the shady lee of yonder warehouses will not suffice. No. They must get just as nigh the water as they possibly can without falling in. And there they stand—miles of them—leagues. Inlanders all, they come from lanes and alleys, streets and avenues—north, east, south, and west. Yet here they all unite. Tell me, does the magnetic virtue of the needles of the compasses of all those ships attract them thither " + str(i) for i in range(1000)] +
+    
+    #contains key fact
+    ["It will be seen that this mere painstaking burrower and grub-worm of a poor devil of a Sub-Sub appears to have gone through the long Vaticans and street-stalls of the earth, picking up whatever random allusions to whales he could anyways find in any book whatsoever, sacred or profane. Therefore you must not, in every case at least, take the higgledy-piggledy whale statements, however authentic, in these extracts, for veritable gospel cetology. Far from it. As touching the ancient authors generally, as well as the poets here appearing, these extracts are solely valuable or entertaining, as affording a glancing bird’s eye view of what has been promiscuously said, thought, fancied, and sung of Leviathan, by many nations and generations, including our own. Ahab had a peg leg made of whale bone."] +
+    
+    ["I stuffed a shirt or two into my old carpet-bag, tucked it under my arm, and started for Cape Horn and the Pacific. Quitting the good city of old Manhatto, I duly arrived in New Bedford. It was a Saturday night in December. Much was I disappointed upon learning that the little packet for Nantucket had already sailed, and that no way of reaching that place would offer, till the following Monday. As most young candidates for the pains and penalties of whaling stop at this same New Bedford, thence to embark on their voyage, it may as well be related that I, for one, had no idea of so doing. For my mind was made up to sail in no other than a Nantucket craft, because there was a fine, boisterous something about everything connected with that famous old island, which amazingly pleased me. Besides though New Bedford has of late been gradually monopolising the business of whaling, and though in this matter poor old Nantucket is now much behind her, yet Nantucket was her great original—the Tyre of this Carthage;—the place where the first dead American whale was stranded. Where else but from Nantucket did those aboriginal whalemen, the Red-Men, first sally out in canoes to give chase to the Leviathan? And where but from Nantucket, too, did that first adventurous little sloop put forth, partly laden with imported cobblestones—so goes the story—to throw at the whales, in order to discover when they were nigh enough to risk a harpoon from the bowsprit? Now having a night, a day, and still another night following before me in New Bedford, ere I could embark for my destined port, it became a matter of concernment where I was to eat and sleep meanwhile. It was a very dubious-looking, nay, a very dark and dismal night, bitingly cold and cheerless. I knew no one in the place. With anxious grapnels I had sounded my pocket, and only brought up a few pieces of silver,—So, wherever you go, Ishmael, said I to myself, as I stood in the middle of a dreary street shouldering my bag, and comparing the gloom towards the north with the darkness towards the south—wherever in your wisdom you may conclude to lodge for the night, my dear Ishmael, be sure to inquire the price, and don’t be too particular. With halting steps I paced the streets, and passed the sign of “The Crossed Harpoons”—but it looked too expensive and jolly there. Further on, from the bright red windows of the “Sword-Fish Inn,” there came such fervent rays, that it seemed to have melted the packed snow and ice from before the house, for everywhere else the congealed frost lay ten inches thick in a hard, asphaltic pavement,—rather weary for me, when I struck my foot against the flinty projections, because from hard, remorseless service the soles of my boots were in a most miserable plight. Too expensive and jolly, again thought I, pausing one moment to watch the broad glare in the street, and hear the sounds of the tinkling glasses within. But go on, Ishmael, said I at last; don’t you hear? get away from before the door; your patched boots are stopping the way. So on I went. I now by instinct followed the streets that took me waterward, for there, doubtless, were the cheapest, if not the cheeriest inns. " + str(i) for i in range(500)] +
+
+    #contains key fact
+    ["So fare thee well, poor devil of a Sub-Sub, whose commentator I am. Thou belongest to that hopeless, sallow tribe which no wine of this world will ever warm; and for whom even Pale Sherry would be too rosy-strong; but with whom one sometimes loves to sit, and feel poor-devilish, too; and grow convivial upon tears; and say to them bluntly, with full eyes and empty glasses, and in not altogether unpleasant sadness—Give it up, Sub-Subs! For by how much the more pains ye take to please the world, by so much the more shall ye for ever go thankless! Would that I could clear out Hampton Court and the Tuileries for ye! But gulp down your tears and hie aloft to the royal-mast with your hearts; for your friends who have gone before are clearing out the seven-storied heavens, and making refugees of long-pampered Gabriel, Michael, and Raphael, against your coming. Here ye strike but splintered hearts together—there, ye shall strike unsplinterable glasses! Ahab had a furrowed brow."] +
+    
+    ["Entering that gable-ended Spouter-Inn, you found yourself in a wide, low, straggling entry with old-fashioned wainscots, reminding one of the bulwarks of some condemned old craft. On one side hung a very large oilpainting so thoroughly besmoked, and every way defaced, that in the unequal crosslights by which you viewed it, it was only by diligent study and a series of systematic visits to it, and careful inquiry of the neighbors, that you could any way arrive at an understanding of its purpose. Such unaccountable masses of shades and shadows, that at first you almost thought some ambitious young artist, in the time of the New England hags, had endeavored to delineate chaos bewitched. But by dint of much and earnest contemplation, and oft repeated ponderings, and especially by throwing open the little window towards the back of the entry, you at last come to the conclusion that such an idea, however wild, might not be altogether unwarranted. But what most puzzled and confounded you was a long, limber, portentous, black mass of something hovering in the centre of the picture over three blue, dim, perpendicular lines floating in a nameless yeast. A boggy, soggy, squitchy picture truly, enough to drive a nervous man distracted. Yet was there a sort of indefinite, half-attained, unimaginable sublimity about it that fairly froze you to it, till you involuntarily took an oath with yourself to find out what that marvellous painting meant. Ever and anon a bright, but, alas, deceptive idea would dart you through.—It’s the Black Sea in a midnight gale.—It’s the unnatural combat of the four primal elements.—It’s a blasted heath.—It’s a Hyperborean winter scene.—It’s the breaking-up of the icebound stream of Time. But at last all these fancies yielded to that one portentous something in the picture’s midst. That once found out, and all the rest were plain. But stop; does it not bear a faint resemblance to a gigantic fish? even the great leviathan himself? n fact, the artist’s design seemed this: a final theory of my own, partly based upon the aggregated opinions of many aged persons with whom I conversed upon the subject. The picture represents a Cape-Horner in a great hurricane; the half-foundered ship weltering there with its three dismantled masts alone visible; and an exasperated whale, purposing to spring clean over the craft, is in the enormous act of impaling himself upon the three mast-heads. " + str(i) for i in range(10)] +
+
+    #contains key fact
+    ["The pale Usher—threadbare in coat, heart, body, and brain; I see him now. He was ever dusting his old lexicons and grammars, with a queer handkerchief, mockingly embellished with all the gay flags of all the known nations of the world. He loved to dust his old grammars; it somehow mildly reminded him of his mortality. Ahab had long scar traced down his face, telling of past battles."]
+)
+
+========== RUN DSPY.PREDICT (SUPPOSED TO HIT RATE LIMIT) AND DSPY.RLM ==========
+# THIS IS EXPECTED TO FAIL!!! 
+predict = dspy.Predict(QA)
+
+result_predict = predict(
+    sections=sections,
+    question="What are Ahab’s prominent physical features?"
+)
+
+print("Predict answer:")
+print(result_predict.answer)
+
+#THIS IS SHOULD!!!
+rlm = dspy.RLM("sections, question -> answer")
+
+result_rlm = rlm(
+    sections=sections,
+    question="What are Ahab’s prominent physical features?"
+)
+print("RLM answer:")
+print(result_rlm.answer)
