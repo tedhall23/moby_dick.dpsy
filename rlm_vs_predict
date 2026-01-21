@@ -6,8 +6,6 @@ import random
 
 %sh
 # Install & configure Deno for RLM/Python
-
-# Install Deno if not already installed
 if [ ! -f "$HOME/.deno/bin/deno" ]; then
     echo "Installing Deno..."
     curl -fsSL https://deno.land/x/install/install.sh | sh -s v2.6.5
